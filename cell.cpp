@@ -35,7 +35,6 @@ void Cell::SetPlayer(PlayerPiece player) {
   }
 }
 
-// The cell
 void Cell::OnMouseLeftDown(wxMouseEvent& event) {
   game->OccupySpace(row, col);
 
