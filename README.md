@@ -1,16 +1,4 @@
-# Lambda Functions
+# Project C Demo
 
-# Enums
-
-# wxWidgets
-
-## wxWidgets events
-
-### Binding handlers
-
-### Command events
-
-- bubble up 
-
-### Non-command events
-
+This is a completed Lab 7 (Project C - connect 4).
+See the `two-games` branch for a start on the Project C part.
