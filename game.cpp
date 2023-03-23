@@ -6,43 +6,58 @@
 
 using namespace std;
 
-Game::Game(const wxString& title)
+GameFrame::GameFrame(const wxString& title)
     : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(640, 480)) {
   // The main panel. The root of the component tree.
   root_panel = new wxPanel(this, wxID_ANY);
 
-  // Use a grid layout for the main component.
-  wxGridSizer* grid = new wxGridSizer(3, 0, 0);
-
-  // Create the nine subpanels that are the tic-tac-toe board.
-  for (int row = 0; row < 3; ++row) {
-    for (int col = 0; col < 3; ++col) {
-      // Construct GUI components for this space.
-      board_panels[row][col] = new Cell(root_panel, this, row, col);
-      grid->Add(board_panels[row][col], 1, wxEXPAND | wxALL, 5);
-
-      // Initialize game state for this space.
-      state.board[row][col] = PlayerPiece::Empty;
-    }
-  }
-  root_panel->SetSizer(grid);
-
   // Menu
   menubar = new wxMenuBar;
   file = new wxMenu;
-  file->Append(101, wxT("&New"));
+  file->Append(101, wxT("&New Tic-tac-toe game"));
+  file->Append(102, wxT("&New Connect 4 game"));
   file->Append(wxID_EXIT, wxT("&Quit"));
   menubar->Append(file, wxT("&File"));
   SetMenuBar(menubar);
 
-  Connect(101, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(Game::OnNewGame));
+  Connect(101, wxEVT_COMMAND_MENU_SELECTED,
+          wxCommandEventHandler(GameFrame::OnNewTTGame));
+  Connect(102, wxEVT_COMMAND_MENU_SELECTED,
+          wxCommandEventHandler(GameFrame::OnNewC4Game));
   Connect(wxID_EXIT, wxEVT_COMMAND_MENU_SELECTED,
-          wxCommandEventHandler(Game::OnQuit));
+          wxCommandEventHandler(GameFrame::OnQuit));
 
+  wxGridSizer* grid = new wxGridSizer(1, 0, 0);
+
+  root_panel->SetSizer(grid);
   this->Centre();
 }
 
-void Game::OccupySpace(int row, int col) {
+BoardGame::BoardGame(wxPanel* parent, int rows, int cols)
+    : wxPanel(parent, -1, wxPoint(-1, -1), wxSize(-1, -1), wxBORDER_SUNKEN) {
+  // Use a grid layout for the main component.
+  wxGridSizer* grid = new wxGridSizer(cols, 0, 0);
+
+  // Create the subpanels that are the game board.
+  for (int row = 0; row < rows; ++row) {
+    vector<Cell*> panel_row_vec;
+    vector<PlayerPiece> state_row_vec;
+    for (int col = 0; col < cols; ++col) {
+      // Construct GUI components for this space.
+      panel_row_vec.push_back(new Cell(this, this, row, col));
+      grid->Add(panel_row_vec.back(), 1, wxEXPAND | wxALL, 5);
+
+      // Initialize game state for this space.
+      state_row_vec.push_back(PlayerPiece::Empty);
+    }
+
+    board_panels.push_back(panel_row_vec);
+    state.board.push_back(state_row_vec);
+  }
+  this->SetSizer(grid);
+}
+
+void BoardGame::OccupySpace(int row, int col) {
   assert(state.turn != PlayerPiece::Empty);
 
   // If the space is occupied, bail.
@@ -57,18 +72,11 @@ void Game::OccupySpace(int row, int col) {
   } else {
     state.turn = PlayerPiece::Player1;
   }
-
-  if (Winner() != PlayerPiece::Empty) {
-    WinnerDialog *dlg = new WinnerDialog(this);
-    dlg->ShowModal();
-    dlg->Destroy();
-    NewGame();
-  }
 }
 
-void Game::NewGame() {
-  for (int row = 0; row < 3; row++) {
-    for (int col = 0; col < 3; col++) {
+void BoardGame::NewGame() {
+  for (int row = 0; row < rows; row++) {
+    for (int col = 0; col < cols; col++) {
       state.board[row][col] = PlayerPiece::Empty;
       board_panels[row][col]->SetPlayer(PlayerPiece::Empty);
       state.turn = PlayerPiece::Player1;
@@ -76,15 +84,56 @@ void Game::NewGame() {
   }
 }
 
-void Game::OnNewGame(wxCommandEvent& WXUNUSED(event)) { NewGame(); }
+void GameFrame::OnNewTTGame(wxCommandEvent& WXUNUSED(event)) {
+  // Destroy any previous tic-tac-toe games or connect4 games. 
+  // Destroy is a method provided by wxWidgets.
+  if (tt_game)  {
+    tt_game->Destroy();
+    tt_game = 0;
+  }
+  if (c4_game)  {
+    c4_game->Destroy();
+    c4_game = 0;
+  }
 
-void Game::OnQuit(wxCommandEvent& WXUNUSED(event)) { Close(true); }
+  // Create a new TicTacToe game and add it to the root panel.
+  // Expand it to fill the entire panel.
+  tt_game = new TicTacToeGame(root_panel);
+  root_panel->GetSizer()->Add(tt_game, 1, wxEXPAND | wxALL, 0);
+
+  // We have removed and added components, so we need to reflow the layout.
+  root_panel->Layout();
+  tt_game->Show(true);
+}
+
+void GameFrame::OnNewC4Game(wxCommandEvent& WXUNUSED(event)) {
+  // Destroy any previous tic-tac-toe games or connect4 games. 
+  // Destroy is a method provided by wxWidgets.
+  if (tt_game)  {
+    tt_game->Destroy();
+    tt_game = 0;
+  }
+  if (c4_game)  {
+    c4_game->Destroy();
+    c4_game = 0;
+  }
+
+  // Create a new Connect4 game and add it to the root panel.
+  // Expand it to fill the entire panel.
+  c4_game = new Connect4Game(root_panel);
+  root_panel->GetSizer()->Add(c4_game, 1, wxEXPAND | wxALL, 0);
+
+  // We have removed and added components, so we need to reflow the layout.
+  root_panel->Layout();
+  c4_game->Show(true);
+}
+
+void GameFrame::OnQuit(wxCommandEvent& WXUNUSED(event)) { Close(true); }
 
 // Returns PlayerPiece::Empty if there is no winner.
-PlayerPiece Game::Winner() const {
-  // for each cell check in
-  for (int row = 0; row < 3; ++row) {
-    for (int col = 0; col < 3; ++col) {
+PlayerPiece TicTacToeGame::Winner() const {
+  for (int row = 0; row < rows; ++row) {
+    for (int col = 0; col < cols; ++col) {
       PlayerPiece base = state.board[row][col];
       if (base == PlayerPiece::Empty) continue;
 
@@ -110,5 +159,9 @@ PlayerPiece Game::Winner() const {
     }
   }
 
+  return PlayerPiece::Empty;
+}
+// Returns PlayerPiece::Empty if there is no winner.
+PlayerPiece Connect4Game::Winner() const {
   return PlayerPiece::Empty;
 }

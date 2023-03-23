@@ -12,7 +12,7 @@ bool MyApp::OnInit()
 {
     wxInitAllImageHandlers();
 
-    Game *game = new Game(wxT("Tic-tac-toe"));
+    GameFrame *game = new GameFrame(wxT("Game"));
     game->Show(true);
 
     return true;

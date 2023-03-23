@@ -6,7 +6,7 @@
 
 using namespace std;
 
-Cell::Cell(wxPanel* parent, Game* game, int row, int col)
+Cell::Cell(wxPanel* parent, BoardGame* game, int row, int col)
     : wxPanel(parent, -1, wxPoint(-1, -1), wxSize(-1, -1), wxBORDER_SUNKEN),
       game(game),
       row(row),
@@ -35,5 +35,13 @@ void Cell::SetPlayer(PlayerPiece player) {
   }
 }
 
-// The cell
-void Cell::OnMouseLeftDown(wxMouseEvent& event) { game->OccupySpace(row, col); }
+void Cell::OnMouseLeftDown(wxMouseEvent& event) {
+  game->OccupySpace(row, col);
+
+  if (game->Winner() != PlayerPiece::Empty) {
+    WinnerDialog* dlg = new WinnerDialog(this);
+    dlg->ShowModal();
+    dlg->Destroy();
+    game->NewGame();
+  }
+}
