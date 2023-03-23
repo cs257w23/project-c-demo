@@ -14,22 +14,27 @@ Game::Game(const wxString& title)
   // Menu
   menubar = new wxMenuBar;
   file = new wxMenu;
-  file->Append(101, wxT("&New"));
+  file->Append(101, wxT("&New Tic-tac-toe game"));
+  file->Append(102, wxT("&New Connect 4 game"));
   file->Append(wxID_EXIT, wxT("&Quit"));
   menubar->Append(file, wxT("&File"));
   SetMenuBar(menubar);
 
   Connect(101, wxEVT_COMMAND_MENU_SELECTED,
-          wxCommandEventHandler(Game::OnNewGame));
+          wxCommandEventHandler(Game::OnNewTTGame));
+  Connect(102, wxEVT_COMMAND_MENU_SELECTED,
+          wxCommandEventHandler(Game::OnNewC4Game));
   Connect(wxID_EXIT, wxEVT_COMMAND_MENU_SELECTED,
           wxCommandEventHandler(Game::OnQuit));
 
+  wxGridSizer* grid = new wxGridSizer(1, 0, 0);
+
+  root_panel->SetSizer(grid);
   this->Centre();
 }
 
 BoardGame::BoardGame(wxPanel* parent, int rows, int cols)
-    : wxPanel(parent, -1, wxPoint(-1, -1), wxSize(-1, -1), wxBORDER_SUNKEN),
-      parent(parent) {
+    : wxPanel(parent, -1, wxPoint(-1, -1), wxSize(-1, -1), wxBORDER_SUNKEN) {
   // Use a grid layout for the main component.
   wxGridSizer* grid = new wxGridSizer(cols, 0, 0);
 
@@ -39,7 +44,7 @@ BoardGame::BoardGame(wxPanel* parent, int rows, int cols)
     vector<PlayerPiece> state_row_vec;
     for (int col = 0; col < cols; ++col) {
       // Construct GUI components for this space.
-      panel_row_vec.push_back(new Cell(parent, this, row, col));
+      panel_row_vec.push_back(new Cell(this, this, row, col));
       grid->Add(panel_row_vec.back(), 1, wxEXPAND | wxALL, 5);
 
       // Initialize game state for this space.
@@ -49,8 +54,7 @@ BoardGame::BoardGame(wxPanel* parent, int rows, int cols)
     board_panels.push_back(panel_row_vec);
     state.board.push_back(state_row_vec);
   }
-  parent->SetSizer(grid);
-
+  this->SetSizer(grid);
 }
 
 void BoardGame::OccupySpace(int row, int col) {
@@ -80,8 +84,36 @@ void BoardGame::NewGame() {
   }
 }
 
-void Game::OnNewGame(wxCommandEvent& WXUNUSED(event)) {
-  game = new TicTacToeGame(root_panel);
+void Game::OnNewTTGame(wxCommandEvent& WXUNUSED(event)) {
+  if (tt_game)  {
+    tt_game->Destroy();
+    tt_game = 0;
+  }
+  if (c4_game)  {
+    c4_game->Destroy();
+    c4_game = 0;
+  }
+
+  tt_game = new TicTacToeGame(root_panel);
+  root_panel->GetSizer()->Add(tt_game, 1, wxEXPAND | wxALL, 0);
+  root_panel->Layout();
+  tt_game->Show(true);
+}
+
+void Game::OnNewC4Game(wxCommandEvent& WXUNUSED(event)) {
+  if (tt_game)  {
+    tt_game->Destroy();
+    tt_game = 0;
+  }
+  if (c4_game)  {
+    c4_game->Destroy();
+    c4_game = 0;
+  }
+
+  c4_game = new Connect4Game(root_panel);
+  root_panel->GetSizer()->Add(c4_game, 1, wxEXPAND | wxALL, 0);
+  root_panel->Layout();
+  c4_game->Show(true);
 }
 
 void Game::OnQuit(wxCommandEvent& WXUNUSED(event)) { Close(true); }
@@ -116,5 +148,9 @@ PlayerPiece TicTacToeGame::Winner() const {
     }
   }
 
+  return PlayerPiece::Empty;
+}
+// Returns PlayerPiece::Empty if there is no winner.
+PlayerPiece Connect4Game::Winner() const {
   return PlayerPiece::Empty;
 }
