@@ -9,7 +9,7 @@ class Cell : public wxPanel
 {
 public:
     Cell();
-    Cell(wxPanel *parent, Game *game, int row, int col);
+    Cell(wxPanel *parent, BoardGame *game, int row, int col);
 
     void OnMouseLeftDown(wxMouseEvent &event);
     void SetPlayer(PlayerPiece player);
@@ -22,7 +22,7 @@ private:
     int col {0};
 
     // Pointer to the main game.
-    Game *game {0};
+    BoardGame *game {0};
 
     wxStaticBitmap *yellow {0};
     wxStaticBitmap *red {0};
