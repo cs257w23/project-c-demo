@@ -19,14 +19,17 @@ Game::Game(const wxString& title)
   menubar->Append(file, wxT("&File"));
   SetMenuBar(menubar);
 
+  Connect(101, wxEVT_COMMAND_MENU_SELECTED,
+          wxCommandEventHandler(Game::OnNewGame));
   Connect(wxID_EXIT, wxEVT_COMMAND_MENU_SELECTED,
           wxCommandEventHandler(Game::OnQuit));
 
   this->Centre();
 }
 
-BoardGame::BoardGame(const wxString& title, int rows, int cols)
-    : Game(title), rows(rows), cols(cols) {
+BoardGame::BoardGame(wxPanel* parent, int rows, int cols)
+    : wxPanel(parent, -1, wxPoint(-1, -1), wxSize(-1, -1), wxBORDER_SUNKEN),
+      parent(parent) {
   // Use a grid layout for the main component.
   wxGridSizer* grid = new wxGridSizer(cols, 0, 0);
 
@@ -36,7 +39,7 @@ BoardGame::BoardGame(const wxString& title, int rows, int cols)
     vector<PlayerPiece> state_row_vec;
     for (int col = 0; col < cols; ++col) {
       // Construct GUI components for this space.
-      panel_row_vec.push_back(new Cell(root_panel, this, row, col));
+      panel_row_vec.push_back(new Cell(parent, this, row, col));
       grid->Add(panel_row_vec.back(), 1, wxEXPAND | wxALL, 5);
 
       // Initialize game state for this space.
@@ -46,10 +49,8 @@ BoardGame::BoardGame(const wxString& title, int rows, int cols)
     board_panels.push_back(panel_row_vec);
     state.board.push_back(state_row_vec);
   }
-  root_panel->SetSizer(grid);
+  parent->SetSizer(grid);
 
-  Connect(101, wxEVT_COMMAND_MENU_SELECTED,
-          wxCommandEventHandler(BoardGame::OnNewGame));
 }
 
 void BoardGame::OccupySpace(int row, int col) {
@@ -79,7 +80,9 @@ void BoardGame::NewGame() {
   }
 }
 
-void BoardGame::OnNewGame(wxCommandEvent& WXUNUSED(event)) { NewGame(); }
+void Game::OnNewGame(wxCommandEvent& WXUNUSED(event)) {
+  game = new TicTacToeGame(root_panel);
+}
 
 void Game::OnQuit(wxCommandEvent& WXUNUSED(event)) { Close(true); }
 

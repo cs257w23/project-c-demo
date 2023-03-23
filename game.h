@@ -20,23 +20,8 @@ struct GameState {
   PlayerPiece turn{PlayerPiece::Player1};
 };
 
-class Game : public wxFrame {
-  wxMenuBar* menubar;
-  wxMenu* file;
-
- protected:
-  // The main panel.
-  wxPanel* root_panel;
-
- public:
-  Game(const wxString& title);
-
-  void OnQuit(wxCommandEvent& event);
-};
-
-class BoardGame : public Game {
+class BoardGame : public wxPanel {
   void OccupySpace(int row, int col);
-  void OnNewGame(wxCommandEvent& event);
 
   // Returns PlayerPiece::Empty if there is no winner.
   virtual PlayerPiece Winner() const = 0;
@@ -50,12 +35,29 @@ class BoardGame : public Game {
 
   int rows;
   int cols;
+  wxPanel* parent;
 
  public:
-  BoardGame(const wxString& title, int rows, int cols);
-  virtual ~BoardGame() {}
+  BoardGame(wxPanel* parent, int rows, int cols);
 
   friend class Cell;
+};
+
+class Game : public wxFrame {
+  wxMenuBar* menubar;
+  wxMenu* file;
+
+ protected:
+  // The main panel the board game object hangs off this panel.
+  wxPanel* root_panel;
+  BoardGame* game;
+
+  void OnNewGame(wxCommandEvent& event);
+
+ public:
+  Game(const wxString& title);
+
+  void OnQuit(wxCommandEvent& event);
 };
 
 class WinnerDialog : public wxDialog {
@@ -69,7 +71,15 @@ class TicTacToeGame : public BoardGame {
   PlayerPiece Winner() const override;
 
  public:
-  TicTacToeGame(const wxString& title) : BoardGame(title, 3, 3) {}
+  TicTacToeGame(wxPanel* parent) : BoardGame(parent, 3, 3) {}
+};
+
+class Connect4Game : public BoardGame {
+  // Returns PlayerPiece::Empty if there is no winner.
+  PlayerPiece Winner() const override;
+
+ public:
+  Connect4Game(wxPanel* parent) : BoardGame(parent, 6, 7) {}
 };
 
 #endif
